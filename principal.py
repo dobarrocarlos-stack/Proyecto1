@@ -1,15 +1,26 @@
-import pandas as pd
+import xlwings as xw 
+import os
 
-# codigo para leer el fichero excel
-df = pd.read_excel("1.xlsx")
 
-# Nueva fila (como diccionario)
-nueva_fila = {"Invoice": 444, "Reference": 555, "Amount": 666}
+print("Directorio actual:", os.getcwd())
+print("Archivos en el directorio:", os.listdir())
 
-# Añadirla
-df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
 
-# Guardar cambios
-df.to_excel("1.xlsx", index=False)
+# Abrir Excel 
+app = xw.App(visible=False) 
+wb = app.books.open(r"plantilla.xlsx") 
 
-print(df.head())
+# Seleccionar hoja origen 
+hoja_origen = wb.sheets["BSC Data 02.2026"] 
+
+# Copiar hoja 
+hoja_origen.api.Copy(After=wb.sheets[-1].api) 
+# Renombrar la nueva hoja 
+nueva_hoja = wb.sheets[-1] 
+nueva_hoja.name = "BSC Data 03.2026"
+
+# Guardar y cerrar 
+wb.save() 
+wb.close() 
+app.quit()
+

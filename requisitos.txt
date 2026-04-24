@@ -1,0 +1,12 @@
+abrir la plantilla
+
+
+ahora de plantilla llamada "BCS Working 02.26 j658.xlsb"
+vamos a copiar la pestaña "BCS Data 02.2026" y la vamos a poner en una nueva pestaña llamada "BCS Data 03.2026"
+
+mes_origen = "02.2026"
+mes_destino = "03.2026"
+
+hoja_origen = wb.sheets[f"BCS Data {mes_origen}"]
+hoja_origen.api.Copy(After = wb.sheets[-1].api)
+wb.sheets[-1].name = f"BCS Data {mes_destino}"
