@@ -1,5 +1,4 @@
 import xlwings as xw 
-import os
 from datetime import datetime
 
 
@@ -20,37 +19,49 @@ def closeExcel(wb, app):
     wb.close() 
     app.quit()
 
+def copyMonth():
+    # Abrir Excel 
+    app = xw.App(visible=False) 
+    wb = app.books.open(r"plantilla.xlsx") 
 
-print("Directorio actual:", os.getcwd())
-print("Archivos en el directorio:", os.listdir())
+    # Nombres
+    nombre_origen = f"BSC Data {lastMonth()}"
+    nombre_destino = f"BSC Data {currentMonth()}"
 
-# Abrir Excel 
-app = xw.App(visible=False) 
-wb = app.books.open(r"plantilla.xlsx") 
+    nombres_hojas = [s.name for s in wb.sheets]
 
-# Nombres
-nombre_origen = f"BSC Data {lastMonth()}"
-nombre_destino = f"BSC Data {currentMonth()}"
+    # 🔴 Validar hoja origen
+    if nombre_origen not in nombres_hojas:
+        closeExcel(wb, app)
+        raise ValueError(f"La hoja origen {nombre_origen} no existe")
 
-nombres_hojas = [s.name for s in wb.sheets]
+    # 🔴 Validar hoja destino (NO debe existir)
+    if nombre_destino in nombres_hojas:
+        closeExcel(wb, app)
+        raise ValueError(f"La hoja destino {nombre_destino} ya existe")
 
-# 🔴 Validar hoja origen
-if nombre_origen not in nombres_hojas:
+    # ✅ Copiar
+    hoja_origen = wb.sheets[nombre_origen]
+    hoja_origen.api.Copy(After=wb.sheets[-1].api)
+
+    # ✅ Renombrar nueva hoja
+    nueva_hoja = wb.sheets[-1]
+    nueva_hoja.name = nombre_destino
+
+    # Guardar y cerrar
     closeExcel(wb, app)
-    raise ValueError(f"La hoja origen {nombre_origen} no existe")
 
-# 🔴 Validar hoja destino (NO debe existir)
-if nombre_destino in nombres_hojas:
-    closeExcel(wb, app)
-    raise ValueError(f"La hoja destino {nombre_destino} ya existe")
 
-# ✅ Copiar
-hoja_origen = wb.sheets[nombre_origen]
-hoja_origen.api.Copy(After=wb.sheets[-1].api)
+def menu():
+    print("MENU")
+    print("1) create BSC Data")
 
-# ✅ Renombrar nueva hoja
-nueva_hoja = wb.sheets[-1]
-nueva_hoja.name = nombre_destino
+    option = int(input("Elige una opcion: "))
 
-# Guardar y cerrar
-closeExcel(wb, app)
+    return option
+
+
+option = menu()
+
+if option == 1:
+    copyMonth()
