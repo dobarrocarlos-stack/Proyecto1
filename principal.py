@@ -48,13 +48,33 @@ def copyMonth():
     nueva_hoja = wb.sheets[-1]
     nueva_hoja.name = nombre_destino
 
+
+    ultima_fila = nueva_hoja.range("R1048576").end("up").row
+
+    nueva_hoja.range(f"FE2:FE{ultima_fila}").formula = '=R2&G2&AE2'
+
     # Guardar y cerrar
     closeExcel(wb, app)
 
 
+def createFDD():
+
+    app = xw.App(visible=False) 
+    wb = app.books.open(r"plantilla.xlsx") 
+
+    nombre_fdd = "FDD Data J658"
+
+    if nombre_fdd in [s.name for s in wb.sheets]:
+        wb.sheets[nombre_fdd].delete()
+
+    # Crear nueva hoja limpia
+    nueva_fdd = wb.sheets.add(nombre_fdd, after=wb.sheets[-1])
+    closeExcel(wb, app)
+
 def menu():
     print("MENU")
     print("1) create BSC Data")
+    print("2) create FDD")
 
     option = int(input("Elige una opcion: "))
 
@@ -65,3 +85,8 @@ option = menu()
 
 if option == 1:
     copyMonth()
+elif option ==2:
+    createFDD()    
+
+
+# columna A hasta la FD, FE cancotenar r2,g2,ae22
