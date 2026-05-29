@@ -1,5 +1,6 @@
 import xlwings as xw 
 from datetime import datetime
+import pandas as pd
 
 
 def lastMonth():
@@ -123,26 +124,141 @@ def createTb():
 
     app.quit()
 
+def fddPivotTable():
+
+    import xlwings as xw
+    import pandas as pd
+
+    app = xw.App(visible=False)
+
+    wb = app.books.open(r"plantilla.xlsx")
+
+    try:
+
+        # =========================
+        # HOJA ORIGEN
+        # =========================
+        nombre_origen = "FDD Data J658"
+
+        if nombre_origen not in [s.name for s in wb.sheets]:
+            closeExcel(wb, app)
+            raise ValueError(f"La hoja {nombre_origen} no existe")
+
+        hoja_origen = wb.sheets[nombre_origen]
+
+        # =========================
+        # LEER DATOS
+        # =========================
+        data = hoja_origen.used_range.value
+
+        headers = data[0]
+        rows = data[1:]
+
+        df = pd.DataFrame(rows, columns=headers)
+
+        # =========================
+        # LIMPIAR NOMBRES COLUMNAS
+        # =========================
+        df.columns = [str(c).strip() for c in df.columns]
+
+        # =========================
+        # CREAR CLAVE
+        # Profit cent + Account number
+        # =========================
+        df["KEY"] = (
+            df["Company code"].astype(str).str.strip() +
+            df["Account number"].astype(str).str.strip() +
+            df["Profit center"].astype(str).str.strip()
+        )
+
+        # =========================
+        # AGRUPAR
+        # =========================
+        pivot_df = (
+            df.groupby("KEY", as_index=False)
+            .agg({
+                "Meridian Posting Amount TC PO903": "sum",
+                "Meridian Posting Amount LC PO90": "sum"
+            })
+        )
+
+        # =========================
+        # BORRAR FDD SI EXISTE
+        # =========================
+        nombre_destino = "FDD"
+
+        if nombre_destino in [s.name for s in wb.sheets]:
+            wb.sheets[nombre_destino].delete()
+
+        # =========================
+        # CREAR NUEVA HOJA
+        # =========================
+        hoja_fdd = wb.sheets.add(nombre_destino, after=wb.sheets[-1])
+
+        # =========================
+        # ESCRIBIR CABECERAS
+        # =========================
+        hoja_fdd.range("A1").value = [
+            "Row Labels",
+            "Sum of Meridian Posting Amount TC PO903",
+            "Sum of Meridian Posting Amount LC PO90"
+        ]
+
+        # =========================
+        # ESCRIBIR DATOS
+        # =========================
+        hoja_fdd.range("A2").value = pivot_df.values.tolist()
+
+        # =========================
+        # GRAND TOTAL
+        # =========================
+        ultima_fila = hoja_fdd.range("A1048576").end("up").row + 1
+
+        hoja_fdd.range(f"A{ultima_fila}").value = "Grand Total"
+
+        hoja_fdd.range(f"B{ultima_fila}").formula = (
+            f"=SUM(B2:B{ultima_fila-1})"
+        )
+
+        hoja_fdd.range(f"C{ultima_fila}").formula = (
+            f"=SUM(C2:C{ultima_fila-1})"
+        )
+
+        # =========================
+        # FORMATO
+        # =========================
+        hoja_fdd.autofit()
+
+        wb.save()
+
+    finally:
+        wb.close()
+        app.quit()
+
+
+
 
 def menu():
     print("MENU")
-    print("1) create BSC Data")
-    print("2) create tb")
-    print("3) crear Reviewer")
+    print("1) Create BSC Data")
+    print("2) Create tb")
+    print("3) Create Reviewer")
+    print("4) Create FDD dinamic Table")
+    print("0) Exit")
 
     option = int(input("Elige una opcion: "))
 
     return option
 
-
-option = menu()
-
-if option == 1:
-    copyMonth()
-elif option == 2:
-    createTb()
-elif option == 3:
-    createReviewer()
-
-
-# columna A hasta la FD, FE cancotenar r2,g2,ae22
+while True:
+    option = menu()
+    if option == 0:
+        break
+    elif option == 1:
+        copyMonth()
+    elif option == 2:
+        createTb()
+    elif option == 3:
+        createReviewer()
+    elif option == 4:
+        fddPivotTable()
